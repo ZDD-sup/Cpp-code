@@ -3,12 +3,36 @@
 #include "oatpp/web/server/HttpConnectionHandler.hpp"
 #include "oatpp/network/tcp/server/ConnectionProvider.hpp"
 
-class HelloHandler : public oatpp::web::server::HttpRequestHandler {
+class SumHandler : public oatpp::web::server::HttpRequestHandler {
 public:
 	std::shared_ptr<OutgoingResponse> handle(const std::shared_ptr<IncomingRequest>& request) override {
-		// создаём ответ, указываем код и сообщение
-		// код 200 означает, что все хорошо
-		return ResponseFactory::createResponse(Status::CODE_200, "Hello, world!");
+		// можно получить параметры Query String
+		auto aPtr = request->getQueryParameter("a").get();
+		auto bPtr = request->getQueryParameter("b").get();
+
+		// получаем значение заголовка в виде строки (std::string)
+		auto acceptLanguaHandltr = request->getHeader("Accept-Language").get();
+		// записываем его в консоль как Warning
+		OATPP_LOGW("App", acceptLanguaHandltr->c_str());
+
+
+		if (aPtr == nullptr || bPtr == nullptr) {
+			OATPP_LOGE("App", "Не все параметры указаны!");
+			return ResponseFactory::createResponse(Status::CODE_400, "Не все параметры указаны!");
+		}
+		// преобразование строки в float
+		float a = atof(aPtr->c_str());
+		float b = atof(bPtr->c_str());
+
+		// создадим ответ, но не возращаем его пока
+		auto response = ResponseFactory::createResponse(Status::CODE_200, std::to_string(a + b));
+		// добавим в заголовок
+		response->putHeaderIfNotExists("SumResult", std::to_string(a + b));
+		
+		OATPP_LOGD("App", "Результат вычислен успешно!");
+
+		// а теперь возращаем ответ уже с заголовком
+		return response;
 	}
 };
 // функция в которой реализуем запуск сервера
@@ -17,7 +41,7 @@ void runServer() {
 	auto router = oatpp::web::server::HttpRouter::createShared();
 
 	// добовляем маршрут и обрабатывающий его хэндлер
-	router->route("GET", "/hello", std::make_shared<HelloHandler>());
+	router->route("GET", "/sum", std::make_shared<SumHandler>());
 
 	// создаём ConnectionHandler и пеередаём ему маршрутизатор
 	auto connectionHandler = oatpp::web::server::HttpConnectionHandler::createShared(router);
@@ -28,6 +52,9 @@ void runServer() {
 	);
 	// создаём сервер с помощью провайдера и хэндлера
 	oatpp::network::Server server(connectionProvider, connectionHandler);
+
+	OATPP_LOGI("App", "Сервер запущен!");
+
 	// стартуем сервер
 	server.run();
 }
@@ -35,6 +62,7 @@ void runServer() {
 
 
 int main() {
+	setlocale(LC_ALL, "Rus");
 	oatpp::base::Environment::init();
 	// вызов функции для запуска
 	runServer();
@@ -43,4 +71,4 @@ int main() {
 	std::cout << "objectsCount = " << oatpp::base::Environment::getObjectsCount() << "\n";
 	std::cout << "objectsCreated = " << oatpp::base::Environment::getObjectsCreated() << "\n\n";*/
 	return 0;
-}
+} 
