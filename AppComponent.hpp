@@ -1,4 +1,5 @@
 #include "oatpp/core/macro/component.hpp"
+#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
 
 class AppComponent {
 public:
@@ -18,8 +19,14 @@ public:
 		return oatpp::web::server::HttpConnectionHandler::createShared(router);
 	}());
 
-	//созаём ConnectionProvider
+	// созаём ConnectionProvider
 	OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, serverConnectionProvider)([] {
 		return oatpp::network::tcp::server::ConnectionProvider::createShared({ "localhost", 8000, oatpp::network::Address::IP_4 });
 	}());
+
+	// создаём компонент ObjectMapper, который будет сериализовывать / десериализовывать
+	// наши dto в формат JSON
+	OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper)([] {
+		return oatpp::parser::json::mapping::ObjectMapper::createShared();
+		}());
 };
