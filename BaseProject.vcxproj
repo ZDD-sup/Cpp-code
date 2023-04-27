@@ -148,8 +148,10 @@
   <ItemGroup>
     <ClInclude Include="AppComponent.hpp" />
     <ClInclude Include="controller\MathController.hpp" />
+    <ClInclude Include="controller\TodoController.hpp" />
     <ClInclude Include="dto\HelloDto.hpp" />
     <ClInclude Include="dto\ResultDto.hpp" />
+    <ClInclude Include="dto\TodoDto.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
