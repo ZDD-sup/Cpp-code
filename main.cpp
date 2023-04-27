@@ -3,20 +3,18 @@
 #include "oatpp/web/server/HttpConnectionHandler.hpp"
 #include "oatpp/network/tcp/server/ConnectionProvider.hpp"
 #include "AppComponent.hpp"
+#include "dto/ResultDto.hpp"
 
 
 class SumHandler : public oatpp::web::server::HttpRequestHandler {
 public:
 	std::shared_ptr<OutgoingResponse> handle(const std::shared_ptr<IncomingRequest>& request) override {
+		//получаем ObjectMapper
+		OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper);
+		
 		// можно получить параметры Query String
 		auto aPtr = request->getQueryParameter("a").get();
 		auto bPtr = request->getQueryParameter("b").get();
-
-		// получаем значение заголовка в виде строки (std::string)
-		auto acceptLanguaHandltr = request->getHeader("Accept-Language").get();
-		// записываем его в консоль как Warning
-		OATPP_LOGW("App", acceptLanguaHandltr->c_str());
-
 
 		if (aPtr == nullptr || bPtr == nullptr) {
 			OATPP_LOGE("App", "Не все параметры указаны!");
@@ -26,10 +24,16 @@ public:
 		float a = atof(aPtr->c_str());
 		float b = atof(bPtr->c_str());
 
+		// формируем тело ответа (DTO)
+		auto dto = ResultDto::createShared();
+		dto->value = a + b;
+		dto->message = "Success!";
+		dto->arguments = ArgumentsDto::createShared();
+		dto->arguments->a = a;
+		dto->arguments->b = b;
+
 		// создадим ответ, но не возращаем его пока
-		auto response = ResponseFactory::createResponse(Status::CODE_200, std::to_string(a + b));
-		// добавим в заголовок
-		response->putHeaderIfNotExists("SumResult", std::to_string(a + b));
+		auto response = ResponseFactory::createResponse(Status::CODE_200, dto, objectMapper);
 		
 		OATPP_LOGD("App", "Результат вычислен успешно!");
 
