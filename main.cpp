@@ -4,48 +4,37 @@
 #include "oatpp/network/tcp/server/ConnectionProvider.hpp"
 #include "AppComponent.hpp"
 #include "dto/ResultDto.hpp"
+#include "dto/HelloDto.hpp"
+#include "controller/MathController.hpp"
 
 
-class SumHandler : public oatpp::web::server::HttpRequestHandler {
-public:
-	std::shared_ptr<OutgoingResponse> handle(const std::shared_ptr<IncomingRequest>& request) override {
-		//получаем ObjectMapper
-		OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper);
-		
-		// можно получить параметры Query String
-		auto aPtr = request->getQueryParameter("a").get();
-		auto bPtr = request->getQueryParameter("b").get();
-
-		if (aPtr == nullptr || bPtr == nullptr) {
-			OATPP_LOGE("App", "Ќе все параметры указаны!");
-			return ResponseFactory::createResponse(Status::CODE_400, "Ќе все параметры указаны!");
-		}
-		// преобразование строки в float
-		float a = atof(aPtr->c_str());
-		float b = atof(bPtr->c_str());
-
-		// формируем тело ответа (DTO)
-		auto dto = ResultDto::createShared();
-		dto->value = a + b;
-		dto->message = "Success!";
-		dto->arguments = ArgumentsDto::createShared();
-		dto->arguments->a = a;
-		dto->arguments->b = b;
-
-		// создадим ответ, но не возращаем его пока
-		auto response = ResponseFactory::createResponse(Status::CODE_200, dto, objectMapper);
-		
-		OATPP_LOGD("App", "–езультат вычислен успешно!");
-
-		// а теперь возращаем ответ уже с заголовком
-		return response;
-	}
-};
+//class SumHandler : public oatpp::web::server::HttpRequestHandler {
+//public:
+//	std::shared_ptr<OutgoingResponse> handle(const std::shared_ptr<IncomingRequest>& request) override {
+//		
+//	}
+//};
 class HelloHandler : public oatpp::web::server::HttpRequestHandler {
 public:
 	std::shared_ptr<OutgoingResponse> handle(const std::shared_ptr<IncomingRequest>& request) override {
-		OATPP_COMPONENT(std::string, helloString);
-		return ResponseFactory::createResponse(Status::CODE_200, helloString);
+		// получаем ObjectMapper
+		OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper);
+		// создаем пустой массив
+		auto list = HelloDto::createShared();
+
+		// наполн€ем массив
+		auto element1 = ElementDto::createShared();
+		list->elements = {};
+		element1->id = 1;
+		element1->name = "Mik";
+		auto ele2 = ElementDto::createShared();
+		ele2->id = 2;
+		ele2->name = "Di";
+
+		list->elements->push_back(element1);
+		list->elements->push_back(ele2);
+		OATPP_LOGD("App", "/hello выполнено");
+		return ResponseFactory::createResponse(Status::CODE_200, list, objectMapper);
 	}
 };
 // функци€ в которой реализуем запуск сервера
@@ -54,8 +43,8 @@ void runServer() {
 	
 	// получаем роутер
 	OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, httpRouter);
-	httpRouter->route("GET", "/sum", std::make_shared<SumHandler>());
-	httpRouter->route("GET", "/hello", std::make_shared<HelloHandler>());
+	// подключаем контроллер к роутеру
+	httpRouter->addController(std::make_shared<MathController>());
 
 	// получаем ConnectionHandler
 	OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, serverConnectionHandler);
